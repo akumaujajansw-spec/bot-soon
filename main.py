@@ -11,7 +11,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 TOKEN = os.getenv("BOT_TOKEN", "8834766580:AAHYJpXJmV9hPQWMjblDW0xCfouahh0FsHM")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "8953615855"))
 
-MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "Mid-server-NOhiNWSgz_SfognouTnJ7hhJ")
+MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "Mid-server-pFVjkKnZS56RezFUtfuzbfLZ")
 # Set True untuk Production, False untuk Sandbox (testing)
 IS_PRODUCTION = False  
 
