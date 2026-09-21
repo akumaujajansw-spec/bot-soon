@@ -13,7 +13,7 @@ ADMIN_ID = int(os.getenv("ADMIN_ID", "8953615855"))
 
 MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "Mid-server-NOhiNWSgz_SfognouTnJ7hhJ")
 # Set True untuk Production, False untuk Sandbox (testing)
-IS_PRODUCTION = True  
+IS_PRODUCTION = False  
 
 ALL_GROUP_IDS = [
     -1003721629607,
