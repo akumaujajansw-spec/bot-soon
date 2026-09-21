@@ -9,7 +9,7 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 # Config Token & API Keys
-TOKEN = os.getenv("BOT_TOKEN", "8834766580:AAHYJpXJmV9hPQWMjblDW0xCfouahh0FsHM").strip()
+TOKEN = os.getenv("BOT_TOKEN", "8834766580:AAG9idxjLm4dum7CcAJWc8evni2ENqGeywI").strip()
 ADMIN_ID = int(os.getenv("ADMIN_ID", "8953615855"))
 
 MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "Mid-server-NOhiNWSgz_SfognouTnJ7hhJ").strip()
