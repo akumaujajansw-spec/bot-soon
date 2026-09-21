@@ -3,15 +3,16 @@ import html
 import base64
 import requests
 import threading
+import time
 from flask import Flask, request, jsonify
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 # Config Token & API Keys
-TOKEN = os.getenv("BOT_TOKEN", "8834766580:AAHYJpXJmV9hPQWMjblDW0xCfouahh0FsHM")
+TOKEN = os.getenv("BOT_TOKEN", "8834766580:AAHYJpXJmV9hPQWMjblDW0xCfouahh0FsHM").strip()
 ADMIN_ID = int(os.getenv("ADMIN_ID", "8953615855"))
 
-MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "Mid-server-pFVjkKnZS56RezFUtfuzbfLZ")
+MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "Mid-server-NOhiNWSgz_SfognouTnJ7hhJ").strip()
 # Set True untuk Production, False untuk Sandbox (testing)
 IS_PRODUCTION = False  
 
@@ -53,9 +54,6 @@ def create_qris_charge(order_id, gross_amount):
         "transaction_details": {
             "order_id": order_id,
             "gross_amount": gross_amount
-        },
-        "qris": {
-            "acquirer": "gopay" # default acquirer QRIS Midtrans
         },
         "custom_expiry": {
             "expiry_duration": 15,
@@ -147,12 +145,10 @@ def handle_contact_admin(message):
 @bot.callback_query_handler(func=lambda call: call.data == "show_qris")
 def process_show_qris(call):
     chat_id = call.message.chat.id
-    bot.send_chat_action(chat_id, 'typing')
+    bot.send_chat_action(chat_id, 'upload_photo')
     
-    # Format Order ID berisi ID Chat Pembeli untuk melacak callback webhook kelak
-    # Format: VIP-<CHAT_ID>-<TIMESTAMP>
-    import time
-    order_id = f"VIP-{chat_id}-{int(time.time())}"
+    # Format Order ID berisi Chat ID pembeli
+    order_id = f"WD-VIP-{chat_id}-{int(time.time())}"
     amount = 85000
     
     bot.answer_callback_query(call.id, "Membuat QRIS...")
@@ -160,7 +156,7 @@ def process_show_qris(call):
     qris_res = create_qris_charge(order_id, amount)
     
     if qris_res.get("status_code") == "201":
-        # Ambil URL Gambar QR Code dari Midtrans (actions array)
+        # Ambil URL Gambar QR Code dari Midtrans
         qr_url = None
         for action in qris_res.get("actions", []):
             if action.get("name") == "generate-qr-code":
@@ -168,20 +164,21 @@ def process_show_qris(call):
                 break
                 
         caption_text = (
-            "<b>VIP WarungDosa - QRIS Dinamis</b>\n\n"
-            "💰 Total Pembayaran: <b>Rp 85.000</b>\n"
-            "⏱️ Masa Aktif: <b>15 Menit</b>\n\n"
-            "<i>Silakan scan QR Code di atas menggunakan GoPay, OVO, Dana, ShopeePay, BCA, Mandiri, atau e-Wallet/Bank lainnya.</i>\n\n"
-            "✅ Setelah pembayaran Anda diterima, link otomatis akan dikirimkan di sini!"
+            "💳 <b>QRIS Pembayaran Paket VIP</b>\n\n"
+            "<b>Total:</b> Rp 85,000\n"
+            f"<b>Order ID:</b> <code>{order_id}</code>\n"
+            "⌛ <b>Batas Waktu:</b> 15 Menit\n\n"
+            "Silakan scan QR Code di atas menggunakan GoPay, OVO, DANA, ShopeePay, DuitNow, Maybank, DLL>.\n\n"
+            "⚡ <b>Setelah pembayaran berhasil, link grup akan terkirim secara otomatis!</b>"
         )
         
         if qr_url:
             bot.send_photo(chat_id, qr_url, caption=caption_text, parse_mode="HTML")
         else:
-            bot.send_message(chat_id, "Gagal mendapatkan QR Code dari Midtrans.")
+            bot.send_message(chat_id, "❌ Gagal mendapatkan QR Code dari Midtrans.")
     else:
         status_msg = qris_res.get("status_message", "Gagal menghubungi Midtrans.")
-        bot.send_message(chat_id, f"Terjadi kesalahan saat memproses pembayaran: {status_msg}")
+        bot.send_message(chat_id, f"⚠️ Terjadi kesalahan saat memproses pembayaran: {status_msg}")
 
 # ==========================================
 # WEBHOOK ENDPOINT FOR MIDTRANS NOTIFICATION
@@ -194,13 +191,12 @@ def midtrans_webhook():
         
     order_id = data.get("order_id", "")
     transaction_status = data.get("transaction_status", "")
-    fraud_status = data.get("fraud_status", "")
 
     # Cek jika pembayaran berhasil (settlement / capture)
     if transaction_status in ["settlement", "capture"]:
         try:
-            # Mengambil target_user_id dari order_id ("VIP-<CHAT_ID>-<TIMESTAMP>")
-            target_user_id = int(order_id.split("-")[1])
+            # Mengambil target_user_id dari order_id ("WD-VIP-<CHAT_ID>-<TIMESTAMP>")
+            target_user_id = int(order_id.split("-")[2])
             
             # Generate Link Invite Sekali Pakai
             generated_links = []
@@ -246,5 +242,11 @@ if __name__ == "__main__":
     print("Menjalankan Flask Webhook...")
     threading.Thread(target=run_flask, daemon=True).start()
     
+    # Hapus webhook lama agar polling lokal/Railway tidak bentrok
+    try:
+        bot.remove_webhook()
+    except Exception:
+        pass
+        
     print("Bot berjalan...")
     bot.infinity_polling()
